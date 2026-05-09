@@ -1,4 +1,16 @@
-## RAY TRACER
+# RAY TRACER
+
+## What is this?
+
+A software ray tracer built from scratch in C++, following and extending 
+"Ray Tracing in One Weekend" by Peter Shirley.
+
+## Current Progress
+
+- [x] Vector math utilities (vec3)  
+- [x] Ray abstraction  
+- [x] Sphere intersection with surface normals  
+- [x] Normal visualization (colored by direction)
 
 #### Build Steps:
 
@@ -14,8 +26,6 @@ cmake -S . -B build
 ```
 cmake --build build
 ```
-
-
 
 #### To execute:
 
