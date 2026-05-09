@@ -1,0 +1,55 @@
+# CMake / out-of-tree builds
+build/
+cmake-build-*/
+out/
+bin/
+lib/
+
+# CMake artifacts (in-source configure)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+_deps/
+Makefile
+
+# Compiled objects and binaries
+*.o
+*.obj
+*.lo
+*.slo
+*.ko
+*.elf
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+*.pch
+*.pdb
+*.ilk
+*.exp
+
+# MSVC / Visual Studio
+.vs/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+*.tlog
+
+# Ray tracer output images
+*.ppm
+
+# Tooling / OS junk
+.cache/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
