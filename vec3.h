@@ -19,21 +19,21 @@ public:
     double operator[](int i) const { return e[i]; }
     double& operator[](int i) { return e[i]; }
 
-    vec3 operator+=(const vec3& v) {
+    vec3& operator+=(const vec3& v) {
         e[0] += v.e[0];
         e[1] += v.e[1];
         e[2] += v.e[2];
         return *this;
     }
     
-    vec3 operator*=(double t) {
+    vec3& operator*=(double t) {
         e[0] *= t;
         e[1] *= t;
         e[2] *= t;
         return *this;
     }
 
-    vec3 operator/=(double t) {
+    vec3& operator/=(double t) {
         return *this *= 1/t;
     }
     
