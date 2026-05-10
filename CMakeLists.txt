@@ -11,4 +11,8 @@ set ( SOURCE_ONE_WEEKEND
   vec3.h
   color.h
   ray.h
+  sphere.h
+  hittable.h
+  hittable_list.h
+  rtinclude.h
 )

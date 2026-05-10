@@ -1,48 +1,14 @@
+#include "rtinclude.h"
+#include "sphere.h"
+#include "hittable.h"
+#include "hittable_list.h"
 #include "vec3.h"
 #include "color.h"
-#include "ray.h"
-#include <cmath>
 
-
-double hit_sphere(const point3& center, double radius, const ray& r){
-    // The math behond it is the sphere equation of x^2 + y^2 + z^2 = r^2,
-    // Which with 2 points just becomes (x1-x2)^2 and resp.for y and z,
-    // so when we put it in Vector terms with 3 Dimensions it is simply (A-B).(A-B) = r^2
-    // which when put in our terms is C (center) and P (point) so (C-P).(C-P) = r^2 so every P which satisfies this lies on the sphere
-    // if our ray P(t)=Q+td 
-    // (C−P(t))⋅(C−P(t))=r^2 which can be found by replacing P(t)
-    // with its expanded form: (C−(Q+td))⋅(C−(Q+td))=r^2
-    // instead of putting this equation and finding 6 resultant vectors 
-    // we can solve for t since that is the only unknown in this equation
-    // t^2d⋅d−2td⋅(C−Q)+(C−Q)⋅(C−Q)−r^2=0
-    // here to see if it hits or not we just check the determinant of b^2 - 4ac to be 0 or greater
-    // and to return the point, we calc -b-discriminant / 2 a
-    // a = d * d
-    // b = -2 * d * (C-Q)
-    // but we can simplify by considering b = -2h
-    vec3 oc = center - r.origin();
-    auto a = r.direction().length_squared();
-    auto h = dot(r.direction(), oc);
-    auto c = oc.length_squared() - radius*radius;
-
-    auto discriminant = h*h - a*c;
-
-    if(discriminant<0){
-        return -1.0;
-    }
-    else{
-        return (h - std::sqrt(discriminant)) / a;
-    }
-}
-
-
-color ray_color(const ray& r){
-    // color the sphere red
-    auto t = hit_sphere(point3(0, 0, -1), 0.5, r);
-    if(t > 0.0){
-        // Normal Vector
-        vec3 N = unit_vector(r.at(t) - vec3(0,0,-1));
-        return 0.5 * color(N.x()+1, N.y()+1, N.z()+1);
+color ray_color(const ray& r, const hittable& world){
+    hit_record rec;
+    if(world.hit(r, interval(0, infinity), rec)){
+        return 0.5 * (rec.normal + color(1, 1, 1));
     }
     
    
@@ -79,6 +45,12 @@ int main(){
     int image_height = int(image_width/aspect_ratio);
     image_height = (image_height < 1) ? 1 : image_height;
 
+    // World
+    hittable_list world;
+
+    world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+    world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
+
     // Camera
     auto focal_length = 1.0;
     auto camera_center = point3(0,0,0);
@@ -112,7 +84,7 @@ int main(){
             auto ray_direction = pixel_center - camera_center; // destination - source of 2 points gives a vector direction
             ray r = ray(camera_center, ray_direction);
 
-            color pixel_color = ray_color(r);
+            color pixel_color = ray_color(r, world);
 
             write_color(std::cout, pixel_color);
         }
