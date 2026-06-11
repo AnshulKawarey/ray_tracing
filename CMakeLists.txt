@@ -15,4 +15,5 @@ set ( SOURCE_ONE_WEEKEND
   hittable.h
   hittable_list.h
   rtinclude.h
+  camera.h
 )
