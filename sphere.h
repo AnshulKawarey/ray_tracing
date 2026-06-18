@@ -6,8 +6,7 @@
 
 class sphere : public hittable {
 public:
-  sphere(const point3 &_center, double _radius)
-      : center(_center), radius(std::fmax(0, _radius)) {}
+  sphere(const point3 &_center, double _radius, shared_ptr<material> mat) : center(_center), radius(std::fmax(0, _radius)), mat(mat) {}
   bool hit(const ray &r, interval ray_t, hit_record &rec) const override {
     // The math behond it is the sphere equation of x^2 + y^2 + z^2 = r^2,
     // Which with 2 points just becomes (x1-x2)^2 and resp.for y and z,
@@ -50,6 +49,7 @@ public:
     rec.p = r.at(rec.t);
     vec3 outward_normal = (rec.p - center) / radius;
     rec.set_face_normal(r, outward_normal);
+    rec.mat = mat;
 
     return true;
   }
@@ -57,6 +57,7 @@ public:
 private:
   point3 center;
   double radius;
+  shared_ptr<material> mat;
 };
 
 #endif

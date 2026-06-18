@@ -8,11 +8,13 @@
 // defines a virtual function for hit which takes in a ray
 // for efficiency, a lot other ray tracers include a min to max range such that if the ray is between them only then the hit counts
 
+class material;
 
 class hit_record{
     public:
         point3 p;
         vec3 normal;
+        shared_ptr<material> mat;
         double t;
         bool front_face;
 
