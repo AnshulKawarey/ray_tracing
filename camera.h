@@ -21,6 +21,8 @@ public:
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
+    std::vector<color> pixels(image_width * image_height);
+    #pragma omp parallel for
     for (int j = 0; j < image_height; j++) {
       std::clog << "\rScanning remaining: " << (image_height - j) << ' '
                 << std::flush;
@@ -31,7 +33,13 @@ public:
           pixel_color += ray_color(r, max_depth, world);
         }
 
-        write_color(std::cout, pixel_samples_scale * pixel_color);
+        pixels[j * image_width + i] = pixel_samples_scale * pixel_color;
+
+      }
+    }
+    for (int j = 0; j < image_height; j++) {
+      for(int i = 0; i < image_width; i++) {
+        write_color(std::cout, pixels[j * image_width + i]);
       }
     }
   }

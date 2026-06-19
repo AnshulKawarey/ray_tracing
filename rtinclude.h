@@ -5,7 +5,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
-#include <cstdlib>
+#include <random>
 
 using std::make_shared;
 using std::shared_ptr;
@@ -20,7 +20,11 @@ inline double degrees_to_radians(double degrees) {
 
 inline double random_double(){
     // Return a random real number in [0,1)
-    return std::rand() / (RAND_MAX + 1.0);
+    // return std::rand() / (RAND_MAX + 1.0);
+    // Each thread gets its own gen and distribution
+    static thread_local std::mt19937 gen(std::random_device{}());
+    static thread_local std::uniform_real_distribution<double> dist(0.0, 1.0);
+    return dist(gen);
 }
 
 inline double random_double(double min, double max){

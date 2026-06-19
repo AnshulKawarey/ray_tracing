@@ -24,13 +24,13 @@ int main(){
     
     world.add(make_shared<sphere>(point3(0,-100.5,-1), 100, material_ground));
     world.add(make_shared<sphere>(point3(0,0,-1), 0.5, material_center));
-    world.add(make_shared<sphere>(point3(1,0.5,-1), 0.5, material_right));
+    world.add(make_shared<sphere>(point3(1.5,0.3,-2), 0.5, material_right));
     world.add(make_shared<sphere>(point3(-1,0,-1), 0.5, material_left));
     
     camera cam;
     // Image
     cam.aspect_ratio= 16.0 / 9.0;
-    cam.image_width = 800;
+    cam.image_width = 400;
     cam.samples_per_pixel = 100;
     cam.max_depth = 50;
     
