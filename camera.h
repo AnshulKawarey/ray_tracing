@@ -37,8 +37,10 @@ public:
   }
 
   void render(const hittable &world) {
+    Timer t;
+
     initialize();
-    // Render
+    std::clog << "init:   " << t.lap() << "ms\n";
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -51,16 +53,18 @@ public:
     std::atomic<int> tiles_done{0};
 
     #pragma omp parallel for schedule(dynamic, 1)
-    for (int t = 0; t < total_tiles; ++t) {
-      render_tile(t % num_tiles_x, t / num_tiles_x, TILE, world, pixels);
+    for (int tile = 0; tile < total_tiles; ++tile) {
+      render_tile(tile % num_tiles_x, tile / num_tiles_x, TILE, world, pixels);
       std::clog << "\r" << ++tiles_done << "/" << total_tiles << " tiles" << std::flush;
     }
+    std::clog << "\nrender: " << t.lap() << "ms\n";
 
     for (int j = 0; j < image_height; j++) {
       for(int i = 0; i < image_width; i++) {
         write_color(std::cout, pixels[j * image_width + i]);
       }
     }
+    std::clog << "write:  " << t.lap() << "ms\n";
   }
 
 private:
