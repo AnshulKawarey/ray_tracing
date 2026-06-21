@@ -4,7 +4,7 @@ project(raytracer LANGUAGES CXX)
 
 if(APPLE)
   execute_process(
-    COMMAND brew --prefix
+    COMMAND brew --prefix libomp
     OUTPUT_VARIABLE LIBOMP_PREFIX
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )

@@ -6,14 +6,35 @@
 #include "rtinclude.h"
 #include "vec3.h"
 #include "material.h"
+#include "timer.h"
+#include <atomic>
 
 class camera {
 public:
   // Image
-  double aspect_ratio = 1.0;
+  float aspect_ratio = 1.0;
   int image_width = 100;
   int samples_per_pixel = 10;
   int max_depth = 10;
+
+  void render_tile(int tile_x, int tile_y, int tile_size, const hittable &world, std::vector<color>& pixels) const {
+    int x_start = tile_x * tile_size;
+    int y_start = tile_y * tile_size;
+    int x_end = std::min(x_start + tile_size, image_width);
+    int y_end = std::min(y_start + tile_size, image_height);
+
+    for(int j = y_start; j < y_end; j++){
+      for(int i = x_start; i<x_end; i++){
+        color pixel_color(0, 0, 0);
+        for(int sample = 0; sample < samples_per_pixel; sample++){
+          ray r = get_ray(i, j);
+          pixel_color += ray_color(r, max_depth, world);
+        }
+
+        pixels[j * image_width + i] = pixel_samples_scale * pixel_color;
+      }
+    }
+  }
 
   void render(const hittable &world) {
     initialize();
@@ -22,21 +43,19 @@ public:
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     std::vector<color> pixels(image_width * image_height);
-    #pragma omp parallel for
-    for (int j = 0; j < image_height; j++) {
-      std::clog << "\rScanning remaining: " << (image_height - j) << ' '
-                << std::flush;
-      for (int i = 0; i < image_width; i++) {
-        color pixel_color(0, 0, 0);
-        for(int sample = 0; sample < samples_per_pixel; sample++){
-          ray r = get_ray(i, j);
-          pixel_color += ray_color(r, max_depth, world);
-        }
+    const int TILE = 16;
+    int num_tiles_x = (image_width + TILE - 1) / TILE;
+    int num_tiles_y = (image_height + TILE - 1) / TILE;
+    int total_tiles = num_tiles_x * num_tiles_y;
 
-        pixels[j * image_width + i] = pixel_samples_scale * pixel_color;
+    std::atomic<int> tiles_done{0};
 
-      }
+    #pragma omp parallel for schedule(dynamic, 1)
+    for (int t = 0; t < total_tiles; ++t) {
+      render_tile(t % num_tiles_x, t / num_tiles_x, TILE, world, pixels);
+      std::clog << "\r" << ++tiles_done << "/" << total_tiles << " tiles" << std::flush;
     }
+
     for (int j = 0; j < image_height; j++) {
       for(int i = 0; i < image_width; i++) {
         write_color(std::cout, pixels[j * image_width + i]);
@@ -50,7 +69,7 @@ private:
   point3 pixel00_loc;         // Location of pixel 0, 0
   vec3 pixel_delta_u;         // Offset to pixel to the right
   vec3 pixel_delta_v;         // Offset to pixel below
-  double pixel_samples_scale; // Color scale factor for a sum of pixel samples
+  float pixel_samples_scale; // Color scale factor for a sum of pixel samples
 
   void initialize() {
     image_height = int(image_width / aspect_ratio);
@@ -65,7 +84,7 @@ private:
     // Viewport
     auto viewport_height = 2.0;
     auto viewport_width =
-        viewport_height * (double(image_width) / image_height);
+        viewport_height * (float(image_width) / image_height);
 
     // Calc the vectors to go down and left-right on the Viewport (based on the
     // global coordinate system)
@@ -99,40 +118,34 @@ private:
   }
 
   vec3 sample_square() const {
-    return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+    return vec3(random_float() - 0.5, random_float() - 0.5, 0);
   }
 
-  color ray_color(const ray &r, int depth, const hittable &world) const {
-    if(depth <= 0){
-      return color(0, 0, 0);
-    }
-
-    hit_record rec;
-
-    if (world.hit(r, interval(0.001, infinity), rec)) {
-      ray scattered;
-      color attenuation;
-      if(rec.mat->scatter(r, rec, attenuation, scattered)){
-        return attenuation * ray_color(scattered, depth-1, world);
+  color ray_color(const ray &r_in, int depth, const hittable &world) const {
+    color accumulated(1.0,1.0,1.0);
+    ray current_ray = r_in;
+    for(size_t depth = 0; depth < max_depth; depth++){
+      hit_record rec;
+      if(world.hit(current_ray, interval(0.001, infinity), rec)){
+        ray scattered;
+        color attenuation;
+        if(rec.mat->scatter(current_ray, rec, attenuation, scattered)){
+          accumulated = accumulated * attenuation;
+          current_ray = scattered;
+        }
+        else{
+          return color(0, 0, 0);    
+        }
       }
-      return color(0,0,0);
+      else{
+        // ray escaped to sky -> apply accumulated attenuation
+        vec3 unit_direction = unit_vector(current_ray.direction());
+        auto a = 0.5f * (unit_direction.y() + 1.0f);
+        color sky_color = (1 - a) * color(1.0f, 1.0f, 1.0f) + a * color(0.5f, 0.7f, 1.0f);
+        return accumulated * sky_color;
+      }
     }
-
-    vec3 unit_direction = unit_vector(r.direction());
-    // Since unit_dir ranges from [-1,1] basically -1 being down and 1 being up,
-    // we need to shoft range from [-1,1] to [0,1]
-    // so we add 1 to unit_dir's y component (with intent of creating a vertical
-    // gradient, can take x if want horizontal gradient) then we divide by 2
-    // since adding 1 makes range [0,2]
-    auto a = 0.5 * (unit_direction.y() + 1.0);
-
-    // now we use this 'a' to create a gradient,
-    // to do that we return a color which will create a gradual shift between
-    // the 2 colors we want in this case we will do it from white to sky blue,
-    // i.e. (1, 1, 1) to (0.5, 0.7, 1.0)
-    // and we make the value using the formula
-    // (1-a)*color1 + a*color2
-    return (1 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
+    return color(0, 0, 0); // exceeded max depth
   }
 };
 
